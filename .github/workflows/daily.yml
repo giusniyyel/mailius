@@ -1,0 +1,74 @@
+name: Daily Summaries
+
+on:
+  schedule:
+    # GitHub Actions uses UTC. 05:30 America/Mexico_City = 11:30 UTC
+    - cron: "30 11 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: daily-summaries
+      cancel-in-progress: false
+
+    # Expose all runtime configuration via GitHub Secrets
+    env:
+      TZ: America/Mexico_City
+      PRODUCT_NAME: ${{ secrets.PRODUCT_NAME }}
+      MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+      MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
+      MAILGUN_BASE_URL: ${{ secrets.MAILGUN_BASE_URL }}
+      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+      RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      AFFIRMATION_API_URL: ${{ secrets.AFFIRMATION_API_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily summarizer
+        run: python main.py
+
+      # Optional: upload generated files from ./output as an artifact
+      - name: Upload results
+        if: success() && hashFiles('output/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: summaries-${{ github.run_id }}
+          path: output/**
+
+      # Optional: email on failure via Mailgun (requires the Mailgun* and email secrets)
+      - name: Notify failure (Mailgun)
+        if: failure()
+        env:
+          SUBJECT: "❌ ${PRODUCT_NAME:-Daily Summaries} job failed — ${{ github.repository }} run ${{ github.run_id }}"
+        run: |
+          if [ -n "$MAILGUN_API_KEY" ] && [ -n "$MAILGUN_DOMAIN" ] && [ -n "$SENDER_EMAIL" ] && [ -n "$RECIPIENT_EMAILS" ] && [ -n "$MAILGUN_BASE_URL" ]; then
+            IFS=',' read -ra RECIPS <<< "$RECIPIENT_EMAILS"
+            for r in "${RECIPS[@]}"; do
+              curl -s --user "api:${MAILGUN_API_KEY}" \
+                "$MAILGUN_BASE_URL/$MAILGUN_DOMAIN/messages" \
+                -F from="$SENDER_EMAIL" \
+                -F to="$r" \
+                -F subject="$SUBJECT" \
+                -F text="Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            done
+          else
+            echo "Mailgun secrets not set; skipping failure email."
+          fi

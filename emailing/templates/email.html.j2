@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f6f7f9;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 24px auto;
+      background: #fff;
+      border: 1px solid #e9edf3;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .hdr {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .hdr-content {
+      padding: 20px 24px;
+    }
+
+    .hdr-image {
+      padding: 20px 24px;
+      text-align: right;
+      width: 96px;
+    }
+
+    .hdr-image img {
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      width: 96px;
+      height: 96px;
+    }
+
+    .hdr p {
+      color: #cbd5e1;
+    }
+
+    .sec {
+      padding: 16px 24px 4px;
+      border-top: 1px solid #f0f2f6;
+    }
+
+    .sec h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #0f172a;
+    }
+
+    .card {
+      padding: 12px 0 16px;
+      border-bottom: 1px dashed #e8ebf1;
+    }
+
+    .ttl {
+      margin: 0 0 6px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .ttl a {
+      color: #0b63c7;
+      text-decoration: none;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 6px;
+    }
+
+    .summary {
+      font-size: 14px;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .links {
+      font-size: 10px;
+    }
+
+    .links a {
+      color: #475569;
+      text-decoration: none;
+    }
+
+    .ft {
+      padding: 14px 24px;
+      font-size: 12px;
+      color: #64748b;
+      background: #fafbfc;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <table class="hdr" role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td class="hdr-content">
+        <h1>📬 {{ product_name }}</h1>
+        <p><b style="color: #ffcd35">Here are today’s highlights!</b> Take a moment to grow and remember: <em>"{{ affirmation }}"</em></p>
+        <p><b>Generated:</b> {{ run_dt.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+      </td>
+      <td class="hdr-image">
+        <img src="https://links.giusniyyel.dev/assets/img/profile.jpeg" alt="Giusniyyel Logo">
+      </td>
+    </tr>
+  </table>
+
+  {% for subreddit, posts in summaries.items() if posts %}
+    {% set emoji = SUBREDDIT_EMOJIS.get(subreddit, SUBREDDIT_EMOJIS['_default']) %}
+    <div class="sec">
+      <h2>{{ emoji }} r/{{ subreddit }}</h2>
+
+      {% for p in posts %}
+        {% set title = p.get('title','') %}
+        {% set url = p.get('url','#') %}
+        {% set permalink = p.get('permalink','#') %}
+        {% set score = p.get('score',0) %}
+        {% set author = p.get('author','') %}
+        {% set created = p.get('created_utc', '') %}
+        {% set summary = p.get('summary','') %}
+
+        <div class="card">
+          <h3 class="ttl"><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ title }}</a></h3>
+          <p class="meta">👍 {{ score }} • by u/{{ author }} • {{ created }}</p>
+          <p class="summary">
+            {{ summary }}
+            {% if permalink and permalink != '#' %}
+              <br/>
+              <a href="{{ permalink }}" target="_blank" rel="noopener noreferrer">More...</a>
+            {% endif %}
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+  <div class="ft">
+    Powered by Mailius. With ❤️ by
+    <a href="https://links.giusniyyel.dev" target="_blank" rel="noopener noreferrer">Giusniyyel</a>.
+  </div>
+</div>
+</body>
+</html>

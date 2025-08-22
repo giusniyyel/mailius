@@ -1,0 +1,36 @@
+📬 {{ product_name }}
+Generated: {{ run_dt.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+
+Here are today’s highlights!
+Affirmation: "{{ affirmation }}"
+
+{{ '=' * 60 }}
+
+{% for subreddit, posts in summaries.items() if posts %}
+{% set emoji = SUBREDDIT_EMOJIS.get(subreddit, SUBREDDIT_EMOJIS['_default']) %}
+{{ emoji }} r/{{ subreddit }}
+{{ '-' * (emoji|length + subreddit|length + 4) }}
+
+{% for p in posts %}
+• {{ p.get('title', '[No Title]') }}
+
+  Score: {{ p.get('score', 0) }} | by u/{{ p.get('author', '[unknown]') }} | {{ p.get('created_utc', 'unknown date') }}
+
+  {%- if p.get('summary') %}
+  {{ p.get('summary') }}
+  {%- if p.get('permalink') and p.get('permalink') != '#' %}
+    (More: {{ p.get('permalink') }})
+  {%- endif %}
+  {%- endif %}
+
+  {%- if p.get('url') %}
+  Link: {{ p.get('url') }}
+  {%- endif %}
+
+{% endfor %}
+
+{{ '=' * 60 }}
+{% endfor %}
+
+Powered by Mailius. Curated with ❤️ by Giusniyyel
+https://links.giusniyyel.dev
